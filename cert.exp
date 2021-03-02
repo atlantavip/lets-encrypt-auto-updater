@@ -1,0 +1,32 @@
+#!/usr/bin/expect
+
+spawn certbot certonly --manual --preferred-challenges=dns -d {domain-name}
+expect "^Select the appropriate number"
+send "2\r"
+expect "^(Y)es/(N)o"
+send "Y\r"
+
+expect {
+    -re "(.*)Before continuing" { set outcome $expect_out(1,string) }
+    timeout { puts "config list not found: timing out!!!\n"; }
+}
+
+exec echo $outcome > certbot.log
+exec /bin/bash replace_bind_config.sh
+
+expect "^Press Enter to Continue"
+
+sleep 120; # Sleeping for 2 min
+
+
+send "\r"
+
+expect {
+      "^Congratulations!" {
+            exit 0
+            #exp_continue
+      }
+      "error" {
+            #interact
+      }
+}
